@@ -69,19 +69,28 @@ NumSYT[n_,l2_]:= Binomial[n+1,l2]*(n-2*l2+1)/(n+1); (* Function of total number 
 
 
 (* ::Input::Initialization:: *)
-AddFirst0[a_]:=(ReplacePart[a, {{1,2}->(a[[1,2]]+1), {2}->Join[a[[2]],{a[[1,1]]+a[[1,2]]+1}]}]); (* Supporting function for AddFirst, represents adding a box (qubit) to the first row of the Young Tableau for a given basis element 'a', thus increasing the second entry in partition by one i.e. increasing the number of elements in the first row and adding a number that is next in order to the SYT first row entry, i.e. for an SYT of {1,2,4} {3,5} it adds 6 to the first row entry turning the SYT into {1,2,4,6} {3,5} *)
+(* Supporting function for AddFirst, represents adding a box (qubit) to the first row of the Young Tableau for a given basis element 'a', thus increasing the second entry in partition by one i.e. increasing the number of elements in the first row and adding a number that is next in order to the SYT first row entry, i.e. for an SYT of {1,2,4} {3,5} it adds 6 to the first row entry turning the SYT into {1,2,4,6} {3,5} *)
+AddFirst0[{{\[Lambda]2_,\[Lambda]1_},row1_,row2_,m_}]:={{\[Lambda]2,\[Lambda]1+1},Append[row1,\[Lambda]1+\[Lambda]2+1],row2,m}; 
 
 
 (* ::Input::Initialization:: *)
-AddFirst[a_]:= Module[{x},x=Map[AddFirst0,a];x=ReplacePart[x, {-1}->Sequence[x[[-1]],x[[-1]]]];x[[-1,4,1]]++;Return[x]]; (* Adds a box (qubit) to the first row for every basis element in a given set 'a' i.e. applies AddFirst0 to every basis element in a given set and then adds a new basis element to the set with max Hamming weight increased by one because the number of SSYT's gets increased by one *)
+ (* Adds a box (qubit) to the first row for every basis element in a given set 'lst' i.e. applies AddFirst0 to every basis element in a given set and then adds a new basis element to the set with max Hamming weight increased by one because the number of SSYT's gets increased by one *)
+AddFirst[lst_]:= Module[{lstnew,last},
+lstnew=Map[AddFirst0,lst];
+last=lst2[[-1]];
+last[[4,1]]++;
+Append[lstnew,last]
+];
 
 
 (* ::Input::Initialization:: *)
-AddSecond0[a_]:=(ReplacePart[a, {{1,1}->(a[[1,1]]+1), {3}->Join[a[[3]],{a[[1,1]]+a[[1,2]]+1}]}]); (* Supporting function for AddSecond, represents adding a box (qubit) to the second row of the Young Tableau for a given basis element 'a', thus increasing the first entry in partition by one i.e. increasing the number of elements in the second row and adding a number that is next in order to the SYT second row entry, i.e. for an SYT of {1,2,4} {3,5} it adds 6 to the second row entry turning the SYT into {1,2,4} {3,5,6} *)
+ (* Supporting function for AddSecond, represents adding a box (qubit) to the second row of the Young Tableau for a given basis element 'a', thus increasing the first entry in partition by one i.e. increasing the number of elements in the second row and adding a number that is next in order to the SYT second row entry, i.e. for an SYT of {1,2,4} {3,5} it adds 6 to the second row entry turning the SYT into {1,2,4} {3,5,6} *)
+AddSecond0[{{\[Lambda]2_,\[Lambda]1_},row1_,row2_,m_}]:={{\[Lambda]2+1,\[Lambda]1},row1,Append[row2,\[Lambda]1+\[Lambda]2+1],m};
 
 
 (* ::Input::Initialization:: *)
-AddSecond[a_]:= Module[{x},x=Map[AddSecond0,a];x= Delete[x,-1]]; (* Adds a box (qubit) to the second row for every basis element in a given set 'a' i.e. applies AddSecond0 to every basis element in a given set and then deletes the last basis element in this set because the number of SSYT's gets decreased by one *)
+(* Adds a box (qubit) to the second row for every basis element in a given set 'lst' i.e. applies AddSecond0 to every basis element in a given set and then deletes the last basis element in this set because the number of SSYT's gets decreased by one *)
+AddSecond[lst_]:= Map[AddSecond0,Most[lst]]; 
 
 
 (* ::Section:: *)
@@ -139,7 +148,7 @@ ar={};
 counter = 1; (* Taken from Permutation up to this point *)
 ClebGor=SparseArray[CG[NumSSYT[num,0]]]; (* The first CG in direct sum with the highest dimensionality for the irrep, i.e. all boxes in first row *)
 For[l2=0,l2<=Quotient[num,2],l2++,
-For[j=1,j<=NumSYT[num,l2],j++,
+Do[
 subsp = sb[[counter;;counter+NumSSYT[num,l2]-1]];
 first = AddFirst[subsp];
 second = AddSecond[subsp];
@@ -148,7 +157,7 @@ ar = Join[ar,subsp];
 counter = counter + NumSSYT[num,l2]; (* Taken from Permutation up to this point *)
 If[l2==0,Continue[], (* Continue so that to skip the direct sum for the first CG, which was already set above *)
 ClebGor=ArrayFlatten[{{ClebGor,0},{0,SparseArray[CG[NumSSYT[num,l2]]]}}]] (* Append to ClebGor the direct sum of ClebGor with the CG for the next irrep, thus constructing the total direct sum of relevant CG's *)
-]
+,NumSYT[num,l2]];
 ];
 sb = ar;
 num++; (* Taken from Permutation up to this point *)
@@ -158,49 +167,19 @@ Return[SchurTrans]
 ]
 
 
+End[];
+
+
+EndPackage[];
+
+
 (* ::Section:: *)
 (*Workspace*)
 
 
 (* ::Input:: *)
-(*Timing[Permutation[14];]*)
+(*SchurTransform[2]//MatrixForm*)
+(*Timing[SchurTransform[11];]*)
 
 
-(* ::Input:: *)
-(*Timing[SchurTransform[12];]*)
 
-
-(* ::Input:: *)
-(*SchurTransform[4] // MatrixForm*)
-
-
-(* ::Input:: *)
-(*TestMat = {{a,b},{c,d}};*)
-(*m := 5;*)
-(*For[i=1; TensMat = TestMat, i< m, i++, TensMat = KroneckerProduct[TensMat,TestMat]];*)
-
-
-(* ::Input:: *)
-(*TensMat // MatrixForm*)
-
-
-(* ::Input:: *)
-(*Swap = {{1,0,0,0},{0,0,1,0},{0,1,0,0},{0,0,0,1}};*)
-(*k:=2;*)
-(*n:=4;*)
-(*For[i=1;PerMat=Swap,i<k,i++,PerMat=KroneckerProduct[IdentityMatrix[2],PerMat]];*)
-(*For[i=k,i<n-1,i++,PerMat=KroneckerProduct[PerMat,IdentityMatrix[2]]];*)
-
-
-(* ::Input:: *)
-(*PerMat // MatrixForm*)
-
-
-(* ::Input:: *)
-(*SchurTransform[m] . TensMat . ConjugateTranspose[SchurTransform[m]] // FullSimplify // MatrixForm*)
-
-
-End[];
-
-
-EndPackage[];
