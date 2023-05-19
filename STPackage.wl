@@ -3,6 +3,15 @@
 BeginPackage["STPackage`"];
 
 
+(* ::Text:: *)
+(*Clear everything in case the package was already loaded before*)
+
+
+Unprotect["STPackage`*"];
+ClearAll["STPackage`*"];
+ClearAll["STPackage`Private`*"];
+
+
 SchurTransform::usage = "SchurTransform[n] outputs a Schur Transform for n qubits.";
 
 
@@ -180,6 +189,3 @@ EndPackage[];
 (* ::Input:: *)
 (*SchurTransform[2]//MatrixForm*)
 (*Timing[SchurTransform[11];]*)
-
-
-
