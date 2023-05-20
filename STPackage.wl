@@ -234,7 +234,7 @@ AddSecond[lst_]:=Map[AddSecond0,Most[lst]];
 
 (* ::Text:: *)
 (*In this step we implement the Schur Transform itself by combining CG recursion and Permutation.  It's natural to combine these two parts of the algorithm as they exist within the same recursion.*)
-(*Everything is implemented through Sparse Arrays to make it faster.*)
+(*Everything is implemented through Sparse Arrays to make the computation faster.*)
 
 
 SchurTransform[n_]:=Module[{counter,subsp,ar,sb,num,BigCG,SchurTrans},
@@ -244,7 +244,6 @@ SchurTransform[n_]:=Module[{counter,subsp,ar,sb,num,BigCG,SchurTrans},
 		sb=Sort[sb];
 		ar={};
 		counter=1;
-		(* The first CG in direct sum with the highest dimensionality for the irrep, i.e. all boxes in first row *)
 		Do[
 			subsp=sb[[counter;;counter+NumSSYT[num,l2]-1]];
 			ar=Join[ar,AddFirst[subsp],AddSecond[subsp]];
@@ -281,7 +280,7 @@ Table[SchurTransform[k] // MatrixForm, {k, 1, 3}]
 And @@ Table[SchurTransform[k] . SchurTransform[k]\[ConjugateTranspose] == IdentityMatrix[2^k], {k, 1, 6}]
 
 
-Timing[SchurTransform[11];]
+Timing[SchurTransform[12];]
 
 
-RepeatedTiming[SchurTransform[11];]
+RepeatedTiming[SchurTransform[12];]
