@@ -78,6 +78,20 @@ CG[l_,w_,\[CapitalDelta]l_,x_]:=If[x==0,\[CapitalDelta]l,1] 1/Sqrt[2] Sqrt[(l+1+
 
 
 (* ::Text:: *)
+(*Given the total number of boxes (qubits) ' n' in Semi-Standard Young Tableau (SSYT) and the number of boxes in the second row ' l2', computes the number of SSYT' s with these parameters .*)
+
+
+NumSSYT[n_,l2_]:=n-2*l2+1;
+
+
+(* ::Text:: *)
+(*Given the total number of boxes (qubits) 'n' in Standard Young Tableau (SYT) and the number of boxes in the second row 'l2', computes the number of SYT's with these parameters.*)
+
+
+NumSYT[n_,l2_]:= Binomial[n+1,l2]*(n-2*l2+1)/(n+1);
+
+
+(* ::Text:: *)
 (*We directly produce the Clebsch-Gordan transform as a sparse array with non-zero values being the CG coefficients at specific positions in the matrix.*)
 (*The rows of this matrix are labeled by overhang l (or spin j) and weight w (or magnetic number m).*)
 (*The columns are labeled by pairs (i,x) where i \[Element] {0,...,d} and x \[Element] {0,1} which are recalculated into a single index in {1,...,2d}.*)
@@ -113,7 +127,7 @@ BigCGTransform[n_]:=DirectSum@Flatten[Table[ConstantArray[CGTransform[NumSSYT[n,
 
 
 (* ::Text:: *)
-(*In this step we implement a representation of the Schur basis that uniquely defines every independent basis state. This representation is equivalent to the classic one, which consists of three main components: partition, a Standard Young Tableux (SYT) and a Semi-Standard Young Tableau (SSYT). *)
+(*In this step we implement a representation of the Schur basis that uniquely defines every independent basis state. This representation is equivalent to the classic one, which consists of three main components: partition, a Standard Young Tableau (SYT) and a Semi-Standard Young Tableau (SSYT). *)
 (*We also define some auxiliary functions that help to manipulate and construct new basis elements for higher number of qubits from lower number of qubits (specifically, by adding one qubit).*)
 
 
@@ -144,20 +158,6 @@ BigCGTransform[n_]:=DirectSum@Flatten[Table[ConstantArray[CGTransform[NumSSYT[n,
 
 
 SchurBasis0={{{0,1},{1},{},{0}},{{0,1},{1},{},{1}}};
-
-
-(* ::Text:: *)
-(*Given the total number of boxes (qubits) 'n' in SSYT and the number of boxes in the second row 'l2', computes the number of SSYT's with these parameters.*)
-
-
-NumSSYT[n_,l2_]:=n-2*l2+1;
-
-
-(* ::Text:: *)
-(*Given the total number of boxes (qubits) 'n' in SYT and the number of boxes in the second row 'l2', computes the number of SYT's with these parameters.*)
-
-
-NumSYT[n_,l2_]:= Binomial[n+1,l2]*(n-2*l2+1)/(n+1);
 
 
 (* ::Text:: *)
@@ -270,7 +270,7 @@ ExtendSchurBasis[sb_,n_]:=Module[{newsb,counter,subsp},
 
 
 SchurTransform[n_]:=Module[{SchurTrans,sb,Id=SparseArray@IdentityMatrix[2]},
-	(* Schur Transform for 1 qubit *)
+	(* Schur basis labels for 1 qubit *)
 	sb={{{0,1},{1},{},{0}},{{0,1},{1},{},{1}}};
 	(* Schur Transform for 1 qubit *)
 	SchurTrans=Id;

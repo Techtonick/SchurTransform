@@ -280,7 +280,7 @@ Table[SchurTransform[k] // MatrixForm, {k, 1, 3}]
 And @@ Table[SchurTransform[k] . SchurTransform[k]\[ConjugateTranspose] == IdentityMatrix[2^k], {k, 1, 6}]
 
 
-Timing[SchurTransform[12];]
+Timing[SchurTransform[11];]
 
 
-RepeatedTiming[SchurTransform[12];]
+RepeatedTiming[SchurTransform[11];]
