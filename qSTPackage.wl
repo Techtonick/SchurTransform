@@ -9,7 +9,7 @@
 (*The general idea behind this algorithm is to implement the q-Schur Transform recursively, through applying a direct sum of relevant qCG transforms for irreps of a q-Schur basis of n qubits to a Tensor product of a     q-Schur Transform for n qubits and a 2x2 Identity matrix (this tensor product with identity represents adding a new qubit), thus obtaining something like a q-Schur Transform for n+1 qubits, although with certain rows disordered. We then have to apply a certain permutation matrix in order to obtain the true q-Schur Transform for n+1 qubits.*)
 (*The qCG transform, when acting on an irrep of dimensionality d of n-qubit q-Schur basis, outputs two irreps of n+1-qubit q-Schur basis, one of them with dimensionality d+1 and the other with dimensionality d-1.*)
 (**)
-(*Note that the idea behind this q-Schur Transform is analogous to the one in the package with the Schur Transform. It's only the formula for the CG transform that changes to qCG.*)
+(*Note that the idea behind this q-Schur Transform is analogous to the one in the package STPackage with the Schur Transform. It's only the formula for the CG transform that changes to qCG.*)
 
 
 (* ::Section:: *)
@@ -64,7 +64,7 @@ Begin["`Private`"];
 
 
 (* ::Item:: *)
-(*the first entries (1 and 2) label:    1 \[LongDash] adding the spins l1 and l2, so l1 + l2 = l + 1/2;    2 \[LongDash] subtracting the spins l1 and l2, so l1 - l2 = l - 1/2*)
+(*the first entries (1 and 2) label:    1 \[LongDash] adding the spins l1 and l2, i.e.  l1 + l2 = l + 1/2;    2 \[LongDash] subtracting the spins l1 and l2, i.e.  l1 - l2 = l - 1/2*)
 
 
 (* ::Text:: *)
@@ -271,7 +271,7 @@ AddSecond[lst_]:=Map[AddSecond0,Most[lst]];
 (*];*)
 
 
-(* Extend a given list of q-Schur basis labels from n-1 to n qubit *)
+(* Extend a given list of q-Schur basis labels from n-1 to n qubits *)
 ExtendSchurBasis[sb_,n_]:=Module[{newsb,counter,subsp},
 	counter=1;
 	newsb=Table[
@@ -318,3 +318,77 @@ Timing[QSchurTransform[8];]
 
 
 RepeatedTiming[QSchurTransform[8];]
+
+
+(* ::Text:: *)
+(*Here we test if the q-Schur Transform actually transforms the n-times tensored matrix quantum group elements.*)
+(*Initialize the matrix entries of an arbitrary matrix quantum group element T = { {a, b}, {c, d} } :*)
+
+
+a;
+b;
+c;
+d;
+
+
+(* ::Text:: *)
+(*Define the relations that a, b, c, d satisfy:*)
+(*[*Note: a, b, c, d are non-commuting operators, relations were taken from https://arxiv.org/abs/2202.06937 , f acts like a non-commutative multiplication of all elements in its argument list]*)
+
+
+Clear[f];
+f[{x___,b,a,y___}]:=q*f[{x,a,b,y}];
+f[{x___,c,a,y___}]:=q*f[{x,a,c,y}];
+f[{x___,d,b,y___}]:=q*f[{x,b,d,y}];
+f[{x___,d,c,y___}]:=q *f[{x,c,d,y}];
+f[{x___,c,b,y___}]:=f[{x,b,c,y}];
+f[{x___,d,a,y___}]:=f[{x,a,d,y}]+(q-q^-1)*f[{x,b,c,y}];
+f[{x___,a,d,y___}]:=q^-1*f[{x,b,c,y}]+1;
+f[{x___,a_,a_,y___}]:=f[{x,a^2,y}];
+f[{x___,a_^k_,a_,y___}]:=f[{x,a^(k+1),y}];
+f[{x___,a_,a_^k_,y___}]:=f[{x,a^(k+1),y}];
+f[{x___,a_^k_,a_^m_,y___}]:=f[{x,a^(k+m),y}];
+
+
+(* ::Text:: *)
+(*Define the T^(\[TensorProduct]n) non-commutative Tensor (Kronecker) Product for T :*)
+
+
+NCTensorProd[n_]:=Module[{M,TGate=({
+ {{a}, {b}},
+ {{c}, {d}}
+})},
+	If[n==1,
+	(* In case n=1, don't tensor anything and just return T *)
+		Return[SparseArray[({
+ {a, b},
+ {c, d}
+})]],
+	(* Else do the following steps: *)
+		M=({
+ {{a}, {b}},
+ {{c}, {d}}
+}); 
+		(* Construct a concatenated Matrix recursively n-1 times, on each step concatanating two matrices of lists that show in which order the elements were added;
+		each resulting matrix element is a list showing order of multiplication of the matrix elements of the initial matrices (same order as in non-commutative Tensor product) *)
+		Do[
+		M=Flatten[Table[Join[M[[i,j]],TGate[[k,l]]],{i,Length[M]},{j,Length[M]},{k,Length[TGate]},{l,Length[TGate]}],{{1,3},{2,4}}],
+		n-1]; 
+		(* Apply f to each element (list) in the resulting matrix *)
+		Return[SparseArray[Table[f[M[[i,j]]],{i,Length[M]},{j,Length[M]}]]]
+	]
+]
+
+
+(* ::Text:: *)
+(*Matrix form in the computational basis:*)
+
+
+NCTensorProd[2] // MatrixForm
+
+
+(* ::Text:: *)
+(*Test that the q-Schur Transform transforms the matrix to the q-Schur Basis:*)
+
+
+FullSimplify[Normal[QSchurTransform[2] . NCTensorProd[2] . QSchurTransform[2]\[ConjugateTranspose]], q \[Element] Reals] // MatrixForm
