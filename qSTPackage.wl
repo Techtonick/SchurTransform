@@ -33,7 +33,7 @@ ClearAll["STPackage`Private`*"];
 
 
 QSchurTransform::usage = "QSchurTransform[n] outputs a q-Schur Transform for n qubits.";
-q::usage = "The commutation parameter q.";
+q::usage = "The deformation parameter q.";
 
 
 Begin["`Private`"];
@@ -68,7 +68,7 @@ Begin["`Private`"];
 
 
 (* ::Text:: *)
-(*Our expression is based on a formula from Klimyk&Schmudgen "Quantum Groups and Their Representations" p .81,eqs.(68),(69). The notation used in the formula is the same as in this expression.*)
+(*Our expression is based on a formula from Klimyk & Schmudgen "Quantum Groups and Their Representations" p. 81, eqs. (68), (69). The notation used in the formula is the same as in this expression.*)
 
 
 (*Quantum integer*)Q[a_]:=(q^a-q^-a)/(q-q^-1);
@@ -81,7 +81,7 @@ QCG[2,l_,j_,s_]:=-s q^(-s (l+s j+1)/2) Sqrt[Q[l-s j]/Q[2 l+1]];
 
 
 (* ::Text:: *)
-(*Given the total number of boxes (qubits) ' n' in Semi-Standard Young Tableau (SSYT) and the number of boxes in the second row ' l2', computes the number of SSYT' s with these parameters .*)
+(*Given the total number of boxes (qubits) 'n' in Semi-Standard Young Tableau (SSYT) and the number of boxes in the second row ' l2', computes the number of SSYT' s with these parameters .*)
 
 
 NumSSYT[n_,l2_]:=n-2*l2+1;
@@ -337,17 +337,17 @@ d;
 
 
 Clear[f];
-f[{x___,b,a,y___}]:=q*f[{x,a,b,y}];
-f[{x___,c,a,y___}]:=q*f[{x,a,c,y}];
-f[{x___,d,b,y___}]:=q*f[{x,b,d,y}];
-f[{x___,d,c,y___}]:=q *f[{x,c,d,y}];
-f[{x___,c,b,y___}]:=f[{x,b,c,y}];
-f[{x___,d,a,y___}]:=f[{x,a,d,y}]+(q-q^-1)*f[{x,b,c,y}];
-f[{x___,a,d,y___}]:=q^-1*f[{x,b,c,y}]+1;
-f[{x___,a_,a_,y___}]:=f[{x,a^2,y}];
-f[{x___,a_^k_,a_,y___}]:=f[{x,a^(k+1),y}];
-f[{x___,a_,a_^k_,y___}]:=f[{x,a^(k+1),y}];
-f[{x___,a_^k_,a_^m_,y___}]:=f[{x,a^(k+m),y}];
+f[x___,b,a,y___]:=q*f[x,a,b,y];
+f[x___,c,a,y___]:=q*f[x,a,c,y];
+f[x___,d,b,y___]:=q*f[x,b,d,y];
+f[x___,d,c,y___]:=q*f[x,c,d,y];
+f[x___,c,b,y___]:=f[x,b,c,y];
+f[x___,d,a,y___]:=f[x,a,d,y]+(q-q^-1)*f[x,b,c,y];
+(*f[x___,a,d,y___]:=q^-1*f[x,b,c,y]+f[x,y];*)
+f[x___,a_,a_,y___]:=f[x,a^2,y];
+f[x___,a_^k_,a_,y___]:=f[x,a^(k+1),y];
+f[x___,a_,a_^k_,y___]:=f[x,a^(k+1),y];
+f[x___,a_^k_,a_^m_,y___]:=f[x,a^(k+m),y];
 
 
 (* ::Text:: *)
@@ -360,22 +360,16 @@ NCTensorProd[n_]:=Module[{M,TGate=({
 })},
 	If[n==1,
 	(* In case n=1, don't tensor anything and just return T *)
-		Return[SparseArray[({
- {a, b},
- {c, d}
-})]],
+		Return[TGate],
 	(* Else do the following steps: *)
-		M=({
- {{a}, {b}},
- {{c}, {d}}
-}); 
+		M=TGate; 
 		(* Construct a concatenated Matrix recursively n-1 times, on each step concatanating two matrices of lists that show in which order the elements were added;
 		each resulting matrix element is a list showing order of multiplication of the matrix elements of the initial matrices (same order as in non-commutative Tensor product) *)
 		Do[
 		M=Flatten[Table[Join[M[[i,j]],TGate[[k,l]]],{i,Length[M]},{j,Length[M]},{k,Length[TGate]},{l,Length[TGate]}],{{1,3},{2,4}}],
 		n-1]; 
 		(* Apply f to each element (list) in the resulting matrix *)
-		Return[SparseArray[Table[f[M[[i,j]]],{i,Length[M]},{j,Length[M]}]]]
+		Return[SparseArray[Table[f@@M[[i,j]],{i,Length[M]},{j,Length[M]}]]]
 	]
 ]
 
@@ -391,4 +385,21 @@ NCTensorProd[2] // MatrixForm
 (*Test that the q-Schur Transform transforms the matrix to the q-Schur Basis:*)
 
 
-FullSimplify[Normal[QSchurTransform[2] . NCTensorProd[2] . QSchurTransform[2]\[ConjugateTranspose]], q \[Element] Reals] // MatrixForm
+n=3;
+Simplify[Normal@QSchurTransform[n],q>0]//MatrixForm
+Simplify[Normal[% . NCTensorProd[n] . %\[Transpose]], q>0] // MatrixForm
+
+
+f[a,d,a]-q^-1 f[b,c,a]//Simplify
+
+
+FullSimplify[Sqrt[Q[3]]q,q>0]
+FullSimplify[Q[2]*q,q>0]
+
+
+Simplify[Normal@QSchurTransform[n],q>0];
+Limit[%,q->0,Direction->"FromAbove"]//MatrixForm
+% . %\[Transpose]//MatrixForm
+
+
+
